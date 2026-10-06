@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Dojo SVT – Météo, climats et tableaux (5ème)</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@500;700;800&display=swap">
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --bg:#e8ebf7; --bg2:#d5daf0; --card:#ffffff; --ink:#191a3a; --muted:#5a5d86;
+  --line:#c3c8e6; --red:#d62839; --good:#12945a; --goodbg:#dff6ea; --bad:#c2273b; --badbg:#fde4e7;
+  --accent:#4b4fd6; --accentink:#ffffff; --shadow:rgba(25,26,58,.18); --sun:#e8a100;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0e0f26; --bg2:#171942; --card:#1b1d4a; --ink:#f1f2ff; --muted:#a9acd8;
+    --line:#34377a; --red:#ff6475; --good:#4ee3a0; --goodbg:#0f3b2c; --bad:#ff7a8a; --badbg:#431a26;
+    --accent:#8c90ff; --accentink:#0e0f26; --shadow:rgba(0,0,0,.5); --sun:#ffc94a;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0e0f26; --bg2:#171942; --card:#1b1d4a; --ink:#f1f2ff; --muted:#a9acd8;
+  --line:#34377a; --red:#ff6475; --good:#4ee3a0; --goodbg:#0f3b2c; --bad:#ff7a8a; --badbg:#431a26;
+  --accent:#8c90ff; --accentink:#0e0f26; --shadow:rgba(0,0,0,.5); --sun:#ffc94a;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px);}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Nunito',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;font-size:17px;line-height:1.5;min-height:100vh;
+  background-image:radial-gradient(circle at 85% -5%,var(--bg2) 0,transparent 45%),radial-gradient(circle at 0% 100%,var(--bg2) 0,transparent 40%);}
+h1,h2,h3{font-family:'Lilita One','Trebuchet MS',system-ui,sans-serif;font-weight:400;letter-spacing:.01em;line-height:1.15;margin:0}
+.wrap{max-width:740px;margin:0 auto;padding:14px 16px 40px}
+.top{display:flex;align-items:center;gap:10px;justify-content:space-between;margin-bottom:12px}
+.brand{display:flex;align-items:center;gap:8px;font-family:'Lilita One',sans-serif;font-size:1.1rem;cursor:pointer;background:none;border:0;color:var(--ink);padding:0}
+.brand svg{width:38px;height:38px}
+.chips{display:flex;gap:8px;align-items:center}
+.chip{background:var(--card);border:2px solid var(--line);border-radius:999px;padding:3px 11px;font-weight:800;font-size:.9rem;white-space:nowrap}
+.icon{background:var(--card);border:2px solid var(--line);color:var(--ink);border-radius:999px;width:42px;height:42px;font-size:1.15rem;cursor:pointer}
+button{font-family:inherit}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.card{background:var(--card);border:2px solid var(--line);border-radius:22px;padding:20px;box-shadow:0 6px 0 var(--shadow)}
+.hero{text-align:center;padding:24px 18px 20px}
+.hero svg{width:110px;height:110px}
+.hero h1{font-size:2rem;margin:6px 0 8px}
+.hero p{margin:6px auto;max-width:44ch;color:var(--muted);font-weight:700}
+.btn{display:inline-block;background:var(--accent);color:var(--accentink);border:0;border-radius:16px;padding:13px 22px;font-size:1.05rem;font-weight:800;cursor:pointer;box-shadow:0 5px 0 var(--shadow);transition:transform .08s}
+.btn:active{transform:translateY(3px);box-shadow:0 2px 0 var(--shadow)}
+.btn.ghost{background:var(--card);color:var(--ink);border:2px solid var(--line)}
+.btn.red{background:var(--red);color:#fff}
+.btn.sm{padding:8px 14px;font-size:.95rem}
+.btns{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:18px}
+.map{display:grid;gap:12px;margin-top:18px}
+.sep{font-family:'Lilita One',sans-serif;color:var(--muted);margin:8px 2px 0;font-size:1rem}
+.lv{display:flex;align-items:center;gap:14px;text-align:left;width:100%;background:var(--card);border:2px solid var(--line);border-radius:18px;padding:12px 14px;cursor:pointer;color:var(--ink);border-left:12px solid var(--belt,var(--line))}
+.lv[disabled]{opacity:.5;cursor:not-allowed}
+.lv .em{font-size:1.7rem}
+.lv b{font-family:'Lilita One',sans-serif;font-weight:400;font-size:1.1rem;display:block}
+.lv small{color:var(--muted);font-weight:700}
+.lv .sc{margin-left:auto;font-weight:800;font-size:.95rem;white-space:nowrap}
+.bar{height:16px;background:var(--bg2);border-radius:999px;overflow:hidden;border:2px solid var(--line)}
+.bar i{display:block;height:100%;width:0;background:var(--belt,var(--accent));transition:width .35s}
+.qhead{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:10px 0 6px;font-weight:800;color:var(--muted);font-size:.95rem}
+.tag{display:inline-block;background:var(--badbg);color:var(--bad);border-radius:999px;padding:1px 10px;font-weight:800;font-size:.85rem;margin-bottom:8px}
+.q{font-size:1.2rem;font-family:'Lilita One',sans-serif;line-height:1.35;margin:2px 0 16px}
+.q small{font-family:'Nunito',sans-serif;font-weight:700;color:var(--muted);font-size:.95rem}
+.q b{font-weight:400;color:var(--accent)}
+.opts{display:grid;gap:10px}
+.opt{width:100%;text-align:left;background:var(--card);color:var(--ink);border:2px solid var(--line);border-radius:16px;padding:13px 15px;font-size:1.02rem;font-weight:700;cursor:pointer;box-shadow:0 4px 0 var(--shadow);display:flex;gap:11px;align-items:flex-start}
+.opt .k{flex:none;width:28px;height:28px;border-radius:50%;background:var(--bg2);display:grid;place-items:center;font-weight:800;font-size:.9rem}
+.opt:not([disabled]):hover{border-color:var(--accent)}
+.opt[disabled]{cursor:default}
+.opt.good{background:var(--goodbg);border-color:var(--good)}
+.opt.bad{background:var(--badbg);border-color:var(--bad)}
+.fb{margin-top:16px;border-radius:16px;padding:13px 15px;font-weight:700}
+.fb.good{background:var(--goodbg);border:2px solid var(--good)}
+.fb.bad{background:var(--badbg);border:2px solid var(--bad)}
+.fb b{display:block;font-family:'Lilita One',sans-serif;font-weight:400;font-size:1.1rem;margin-bottom:2px}
+details.peek{margin-bottom:12px;background:var(--card);border:2px dashed var(--line);border-radius:16px;padding:8px 14px}
+details.peek summary{cursor:pointer;font-weight:800}
+.lesson h2{font-size:1.45rem;margin-bottom:10px}
+.lesson h3{font-size:1.15rem;margin:16px 0 6px}
+.lesson p,.lesson li{margin:6px 0}
+.lesson ul,.lesson ol{padding-left:22px;margin:6px 0}
+.lesson table{border-collapse:collapse;width:100%;margin:10px 0;font-size:.97rem}
+.lesson th,.lesson td{border:2px solid var(--line);padding:6px 9px;text-align:left}
+.lesson th{background:var(--bg2)}
+.key{background:var(--bg2);border-left:6px solid var(--red);border-radius:10px;padding:8px 12px;margin:10px 0;font-weight:700}
+.model{background:var(--goodbg);border:2px solid var(--good);border-radius:12px;padding:10px 14px;margin:10px 0;font-weight:700}
+.note{background:var(--bg2);border-radius:12px;padding:8px 12px;margin:10px 0;font-size:.92rem;color:var(--muted);font-weight:700}
+.scroll-x{overflow-x:auto}
+.big{font-family:'Lilita One',sans-serif;font-size:3.4rem;line-height:1;margin:6px 0}
+.center{text-align:center}
+.belt{height:22px;border-radius:6px;margin:12px auto;max-width:260px;background:var(--belt);border:3px solid var(--ink);position:relative}
+.belt::after{content:"";position:absolute;left:50%;top:-6px;width:26px;height:32px;margin-left:-13px;background:var(--belt);border:3px solid var(--ink);border-radius:6px}
+.ombro svg,.sunbox svg{width:100%;height:auto;max-width:440px;display:block;margin:6px auto;color:var(--ink)}
+select,textarea,input[type=text]{font-family:inherit;font-size:1rem;border-radius:12px;border:2px solid var(--line);background:var(--card);color:var(--ink)}
+select{font-weight:800;padding:8px 10px}
+textarea{width:100%;min-height:150px;padding:10px;font-weight:600;line-height:1.5}
+table.tb{border-collapse:collapse;width:100%;margin:10px 0}
+table.tb td{border:2px solid var(--ink);padding:2px;min-width:78px;vertical-align:middle}
+table.tb input{width:100%;border:0;background:transparent;padding:8px 6px;font-size:.95rem;font-weight:700;color:var(--ink);text-align:center;border-radius:0}
+table.tb input.ok{background:var(--goodbg)}
+table.tb input.ko{background:var(--badbg)}
+table.tb td.corner{background:linear-gradient(to top right,transparent calc(50% - 1.5px),var(--ink) 50%,transparent calc(50% + 1.5px));padding:0;min-width:120px}
+table.tb td.corner input{text-align:left;padding:4px 6px;font-size:.82rem}
+table.tb td.corner input.tr{text-align:right;display:block}
+table.tb td.corner input.bl{display:block;margin-top:14px}
+input.title{width:100%;padding:8px 10px;font-weight:800;text-decoration:underline;text-align:center}
+.crit{list-style:none;padding:0}
+.crit li{padding:6px 10px;border-radius:10px;margin:5px 0;font-weight:700}
+.crit li.y{background:var(--goodbg)}
+.crit li.n{background:var(--badbg)}
+.pop{animation:pop .35s ease-out}
+@keyframes pop{0%{transform:scale(.96)}60%{transform:scale(1.03)}100%{transform:scale(1)}}
+@keyframes slash{0%{opacity:0;transform:translateX(-40px) rotate(-8deg)}30%{opacity:1}100%{opacity:0;transform:translateX(60px) rotate(8deg)}}
+.slash{position:fixed;left:0;right:0;top:38%;text-align:center;font-family:'Lilita One',sans-serif;font-size:2.6rem;pointer-events:none;color:var(--red);text-shadow:0 3px 0 var(--shadow);animation:slash .9s ease-out forwards;z-index:9}
+@media (prefers-reduced-motion:reduce){.pop,.slash{animation:none}.slash{opacity:1}.bar i{transition:none}}
+@media (max-width:420px){.q{font-size:1.1rem}.hero h1{font-size:1.65rem}table.tb td{min-width:64px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <button class="brand" onclick="home()" aria-label="Retour à la carte">
+      <svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="52" r="38" fill="#14142b"/><rect x="14" y="40" width="72" height="24" rx="10" fill="#f2c9a0"/><circle cx="36" cy="52" r="5" fill="#14142b"/><circle cx="64" cy="52" r="5" fill="#14142b"/><circle cx="37.6" cy="50.4" r="1.8" fill="#fff"/><circle cx="65.6" cy="50.4" r="1.8" fill="#fff"/><rect x="12" y="29" width="76" height="9" fill="#d62839"/><path d="M88 33 l11 -9 l-2 14z M88 35 l10 9 l-10 -2z" fill="#d62839"/></svg>
+      <span>Dojo SVT</span>
+    </button>
+    <div class="chips">
+      <span class="chip" id="streakChip" title="Bonnes réponses d'affilée">🔥 0</span>
+      <button class="icon" id="soundBtn" aria-label="Activer ou couper le son">🔊</button>
+    </div>
+  </div>
+  <main id="app"></main>
+</div>
+
+<script>
+/* ================= OUTILS ================= */
+const $=s=>document.querySelector(s);
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const pickN=(arr,n,not)=>shuffle(arr.filter(x=>x!==not)).slice(0,n);
+const fmt=n=>(Math.round(n*10)/10).toString().replace('.',',');
+const norm=s=>(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\./g,',').replace(/['’]/g,' ').replace(/[^a-z0-9,\- ]/g,' ').replace(/\s+/g,' ').trim();
+const MONTHS=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+
+/* ================= SON ================= */
+const S={li:0,qs:[],queue:[],failed:{},lvlOk:[],lvlDone:[],lvlN:[],unlocked:0,done:0,streak:0,sound:true,answered:false,opts:[],k:0};
+let AC;
+function tone(f,t,d,type,v){if(!S.sound)return;try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();const o=AC.createOscillator(),g=AC.createGain();o.type=type||'sine';o.frequency.value=f;g.gain.setValueAtTime(v||.15,AC.currentTime+t);g.gain.exponentialRampToValueAtTime(.001,AC.currentTime+t+d);o.connect(g);g.connect(AC.destination);o.start(AC.currentTime+t);o.stop(AC.currentTime+t+d+.02)}catch(e){}}
+const sfxGood=()=>{tone(660,0,.12,'triangle');tone(990,.09,.12,'triangle');tone(1320,.18,.3,'triangle')};
+const sfxBad=()=>{tone(220,0,.2,'sawtooth',.07);tone(160,.15,.25,'sawtooth',.07)};
+const sfxWin=()=>{[523,659,784,1047,1319].forEach((f,i)=>tone(f,i*.11,.3,'triangle',.14))};
+function say(t){if(!S.sound||!('speechSynthesis' in window))return;try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang='fr-FR';const v=speechSynthesis.getVoices().find(v=>v.lang&&v.lang.toLowerCase().startsWith('fr'));if(v)u.voice=v;u.rate=1.05;u.pitch=1.25;speechSynthesis.speak(u)}catch(e){}}
+try{if('speechSynthesis' in window){speechSynthesis.getVoices();speechSynthesis.onvoiceschanged=()=>speechSynthesis.getVoices()}}catch(e){}
+function flash(txt){const d=document.createElement('div');d.className='slash';d.textContent=txt;document.body.appendChild(d);setTimeout(()=>d.remove(),950)}
+$('#soundBtn').onclick=()=>{S.sound=!S.sound;$('#soundBtn').textContent=S.sound?'🔊':'🔇';if(!S.sound){try{speechSynthesis.cancel()}catch(e){}}else{say("Son activé. Prêt pour l'entraînement, jeune ninja !")}};
+const setStreak=()=>{$('#streakChip').textContent='🔥 '+S.streak};
+const GOOD=[
+ "Bravo, jeune ninja ! Ton shuriken a fait mouche !",
+ "Excellent ! Tu es rapide comme l'éclair, rien ne t'arrête !",
+ "Hiya ! Bonne réponse ! Les ombres tremblent devant ton cerveau !",
+ "Incroyable ! Un vrai maître ninja des sciences !",
+ "Parfait ! Ton esprit est aussi tranchant qu'un katana !",
+ "Silencieux et précis, comme un ninja. Bravo champion !",
+ "Tu as esquivé le piège ! Le dojo est fier de toi !",
+ "Combo ninja ! Tu es en feu, continue !"
+];
+const BAD=[
+ "Pas grave, jeune ninja. Un vrai ninja apprend de chaque combat. Lis bien l'explication !",
+ "Aïe, le piège était bien caché. Lis l'explication, et tu reviendras plus fort !",
+ "Même les plus grands maîtres ont raté un tir. Lis l'explication, puis on recommence !"
+];
+
+/* ================= DONNÉES : VILLES (diagrammes d'entraînement) ================= */
+const CITIES=[
+ {name:"Nuuk (Groenland)",short:"Nuuk",T:[-8,-8,-8,-4,1,5,8,7,4,0,-4,-6],P:[45,50,55,50,50,55,60,75,80,75,65,55],cl:"polaire"},
+ {name:"Paris (France)",short:"Paris",T:[5,6,9,12,15,19,21,21,17,13,8,6],P:[51,41,47,50,65,62,60,58,50,56,56,59],cl:"tempéré"},
+ {name:"Le Caire (Égypte)",short:"Le Caire",T:[14,16,18,22,26,28,29,29,27,24,20,16],P:[5,4,4,1,0,0,0,0,0,1,4,5],cl:"chaud"}
+];
+const stat=c=>({Tx:Math.max(...c.T),Tn:Math.min(...c.T),Px:Math.max(...c.P),Pn:Math.min(...c.P)});
+function ombro(c){
+  const W=400,H=262,l=44,r=44,t=30,b=30,pw=W-l-r,ph=H-t-b,Tn=-10,Tx=30;
+  const y=T=>t+ph*(1-(T-Tn)/(Tx-Tn));
+  const yP=P=>y(0)-(P/3)*(ph/(Tx-Tn));
+  let g=`<text x="${W/2}" y="14" text-anchor="middle" font-size="13" font-weight="800" fill="currentColor">${c.name}</text><text x="${l-6}" y="${t-8}" text-anchor="end" font-size="10" fill="#d62839" font-weight="800">°C</text><text x="${W-r+6}" y="${t-8}" font-size="10" fill="#3b8be8" font-weight="800">mm</text>`;
+  for(let T=Tn;T<=Tx;T+=5){g+=`<line x1="${l}" x2="${W-r}" y1="${y(T)}" y2="${y(T)}" stroke="currentColor" stroke-opacity="${T===0?.75:.14}" stroke-width="${T===0?1.6:1}"/><text x="${l-6}" y="${y(T)+4}" text-anchor="end" font-size="10" fill="#d62839">${T}</text>`}
+  for(let P=0;P<=90;P+=15){g+=`<text x="${W-r+6}" y="${yP(P)+4}" font-size="10" fill="#3b8be8">${P}</text>`}
+  const bw=pw/12;
+  c.P.forEach((p,i)=>{g+=`<rect x="${l+i*bw+bw*.2}" y="${yP(p)}" width="${bw*.6}" height="${Math.max(y(0)-yP(p),0)}" fill="#3b8be8" fill-opacity=".72"/>`;g+=`<text x="${l+i*bw+bw/2}" y="${H-b+16}" text-anchor="middle" font-size="11" font-weight="700" fill="currentColor">${'JFMAMJJASOND'[i]}</text>`});
+  const pts=c.T.map((v,i)=>`${l+i*bw+bw/2},${y(v)}`).join(' ');
+  g+=`<polyline points="${pts}" fill="none" stroke="#d62839" stroke-width="2.6"/>`;
+  c.T.forEach((v,i)=>{g+=`<circle cx="${l+i*bw+bw/2}" cy="${y(v)}" r="3.2" fill="#d62839"/>`});
+  return `<div class="ombro"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Diagramme ombrothermique de ${c.name}">${g}</svg></div>`;
+}
+const monthsOf=(arr,v)=>arr.map((x,i)=>x===v?MONTHS[i]:null).filter(Boolean).join(' et ');
+
+/* ================= NIVEAUX ================= */
+const LEVELS=[
+/* 0 */ {name:"Ceinture blanche",em:"🌦️",belt:"#f3f3f3",title:"Météo ou climat ?",
+ lesson:()=>`<h2>📜 Parchemin 1 : météo ou climat ?</h2>
+ <div class="scroll-x"><table><tr><th></th><th>🌦️ MÉTÉO</th><th>📅 CLIMAT</th></tr>
+ <tr><td><b>C'est…</b></td><td>le temps qu'il fait <b>aujourd'hui</b> et pendant les <b>jours à venir</b></td><td><b>la moyenne</b> des conditions météo sur <b>plusieurs décennies</b></td></tr>
+ <tr><td><b>Durée</b></td><td>quelques heures, quelques jours</td><td>des dizaines d'années</td></tr>
+ <tr><td><b>Exemples</b></td><td>un orage ce soir, une canicule le 15 juillet, des inondations en quelques heures</td><td>les étés sont chauds et secs en Provence, il pleut très peu au Sahara</td></tr></table></div>
+ <div class="key">📏 Une <b>décennie</b> = <b>10 ans</b>. Plusieurs décennies = plusieurs dizaines d'années.</div>
+ <div class="key">🥷 Le truc : <b>un événement précis (ce jour-là, en quelques heures)</b> = météo. <b>En moyenne, depuis des décennies</b> = climat.</div>
+ <h3>Modèle de réponse (question à 2 points)</h3>
+ <p><i>À l'aide de l'introduction et du document 1, indiquer si l'épisode du 21 septembre 2025 relève de la météo ou du climat. Justifier.</i></p>
+ <div class="model">L'épisode du 21 septembre 2025 relève de la <b>météo</b>. En effet, d'après l'introduction, les inondations se sont produites <b>en quelques heures</b>, un jour précis (le dimanche 21 septembre 2025). Or, d'après le document 1, la météo correspond au <b>temps qu'il fait aujourd'hui et pendant les jours à venir</b>, alors que le climat est la <b>moyenne</b> des conditions météo sur <b>plusieurs décennies</b>.</div>
+ <p>Structure : <b>1) Je réponds</b> (météo) ➜ <b>2) Je justifie avec l'introduction</b> ➜ <b>3) Je justifie avec le document</b>.</p>
+ <div class="note">Attention : l'introduction dit aussi que les pluies sont « de plus en plus importantes chaque automne » et « de plus en plus fréquentes ». Cette <b>évolution sur de nombreuses années</b> concerne le <b>climat</b>, mais l'épisode précis du 21 septembre, lui, est un événement de <b>météo</b>.</div>`,
+ build:()=>[
+  ["Que désigne la météo ?","Le temps qu'il fait aujourd'hui et pendant les jours à venir",["La moyenne des conditions météo sur plusieurs décennies","Le temps qu'il faisait il y a 100 ans","Les saisons de l'année"],"Définition de Météo-France : la météo, c'est le temps qu'il fait aujourd'hui et pendant les jours à venir."],
+  ["Que désigne le climat ?","La moyenne des conditions météo sur plusieurs décennies",["Le temps qu'il fait aujourd'hui","La prévision du lendemain","Un orage violent"],"Le climat est la moyenne des conditions météo sur plusieurs décennies."],
+  ["Une décennie correspond à…","10 ans",["1 an","100 ans","50 ans"],"Déca = dix : une décennie = 10 ans (comme le précise le sujet)."],
+  ["« Plusieurs décennies » représente…","Plusieurs dizaines d'années",["Quelques jours","Quelques mois","Une seule année"],"Plusieurs décennies = 20, 30, 40 ans ou plus. C'est la durée nécessaire pour parler de climat."],
+  ["« Il pleut ce matin à Paris » : météo ou climat ?","Météo",["Climat","Les deux en même temps","Ni l'un ni l'autre"],"C'est le temps qu'il fait aujourd'hui : météo."],
+  ["« En Islande, les étés sont frais en moyenne depuis des décennies » : météo ou climat ?","Climat",["Météo","Ni l'un ni l'autre","Prévision"],"« En moyenne » + « depuis des décennies » : climat."],
+  ["« Un violent orage éclate ce soir à Cassis » : météo ou climat ?","Météo",["Climat","Un climat orageux","On ne peut pas savoir"],"Un événement précis, ce soir : météo."],
+  ["« Au Sahara, il tombe très peu de pluie en moyenne » : météo ou climat ?","Climat",["Météo","La météo de demain","Un événement exceptionnel"],"C'est une moyenne sur de nombreuses années : climat."],
+  ["Le 21 septembre 2025, plusieurs villes du sud de la France ont connu des inondations en quelques heures. C'est…","De la météo",["Du climat","De la météo et du climat de la même façon","Une saison"],"Un épisode précis, qui a duré quelques heures : météo."],
+  ["Quelle est la meilleure justification pour l'épisode du 21 septembre 2025 ?","C'est de la météo, car l'épisode a duré quelques heures un jour précis, alors que le climat est une moyenne sur plusieurs décennies",["C'est du climat, car il a beaucoup plu","C'est du climat, car c'était de l'eau douce","C'est de la météo, car la météo est la moyenne des pluies"],"Une bonne justification utilise les deux documents : l'introduction (quelques heures) et le document 1 (définitions)."],
+  ["« Des pluies de plus en plus importantes chaque automne », sur de nombreuses années, indiquent plutôt…","Une évolution du climat",["La météo d'un seul jour","Une erreur de prévision","Un simple changement de saison"],"Une tendance sur de nombreuses années concerne le climat."],
+  ["Pourquoi un seul orage ne suffit-il pas à dire que le climat change ?","Parce que le climat se mesure par des moyennes sur plusieurs décennies, pas sur un seul événement",["Parce que les orages ne sont pas de la météo","Parce que le climat ne change jamais","Parce que la météo dure toujours dix ans"],"Pour parler de climat, il faut regarder la moyenne sur plusieurs décennies."],
+  ["Quel groupe de mots annonce plutôt le climat ?","« en moyenne, depuis des décennies »",["« ce soir »","« demain matin »","« en ce moment »"],"Moyenne + longue durée = climat. Les mots « ce soir », « demain », « en ce moment » annoncent la météo."]
+ ]},
+/* 1 */ {name:"Ceinture jaune",em:"🌍",belt:"#f5c518",title:"La Terre, le Soleil et la forme de la Terre",
+ lesson:()=>`<h2>📜 Parchemin 2 : la Terre dans l'espace</h2>
+ <p>La Terre est la <b>3e planète</b> du système solaire. Elle <b>gravite autour d'une étoile : le Soleil</b>, en effectuant un tour en <b>un an</b> (environ 365 jours).</p>
+ <p>Elle se déplace aussi en <b>tournant sur elle-même</b> (rotation) : un tour en <b>24 heures</b>, soit un jour.</p>
+ <h3>Comment a-t-on découvert la forme de la Terre ?</h3>
+ <ul><li><b>Aristote</b> (IVe siècle av. J.-C.) : lors des éclipses de Lune, l'<b>ombre de la Terre</b> sur la Lune est <b>toujours ronde</b>. Seule une sphère donne toujours une ombre ronde.</li>
+ <li><b>Ératosthène</b> (IIIe siècle av. J.-C.) : en comparant l'<b>ombre d'un bâton</b> à deux endroits différents (Syène et Alexandrie) le même jour, il montre que la Terre est <b>sphérique</b> et mesure sa taille (environ 40 000 km de tour).</li></ul>
+ <div class="key">🔑 La Terre est <b>sphérique</b> (presque ronde). Le Soleil est très loin : ses <b>rayons arrivent parallèles</b> sur la Terre.</div>
+ <div class="note">Ces détails sont à compléter avec la vidéo « Comment a-t-on découvert la forme de la Terre ? » vue en classe : mes fichiers ne contiennent pas ce passage en entier.</div>`,
+ build:()=>[
+  ["La Terre est la … planète du système solaire.","3e (troisième)",["1re (première)","2e (deuxième)","5e (cinquième)"],"Mercure, Vénus, puis la Terre : la 3e planète."],
+  ["Le Soleil est…","Une étoile",["Une planète","Un satellite","Une comète"],"Le Soleil est l'étoile autour de laquelle la Terre gravite."],
+  ["La Terre gravite autour…","Du Soleil",["De la Lune","De Mars","D'elle-même seulement"],"La Terre tourne autour du Soleil. Elle tourne aussi sur elle-même."],
+  ["Combien de temps la Terre met-elle pour faire un tour autour du Soleil ?","Un an (environ 365 jours)",["24 heures","Un mois","Une semaine"],"Un tour autour du Soleil = un an."],
+  ["Combien de temps la Terre met-elle pour tourner une fois sur elle-même ?","24 heures (un jour)",["Un an","Un mois","12 heures"],"Une rotation sur elle-même = 24 heures."],
+  ["Quelle est la forme de la Terre ?","Sphérique (presque ronde)",["Plate","Cubique","En forme de disque"],"La Terre est une sphère (très légèrement aplatie aux pôles)."],
+  ["Quelle observation montre que la Terre est ronde ?","Lors d'une éclipse de Lune, l'ombre de la Terre sur la Lune est toujours ronde",["L'ombre de la Terre sur la Lune est carrée","Le Soleil se couche tous les soirs","La Lune a des cratères"],"Seule une sphère donne toujours une ombre ronde : c'est l'argument d'Aristote."],
+  ["Qui a mesuré la taille de la Terre en comparant des ombres de bâtons ?","Ératosthène",["Newton","Galilée","Archimède"],"Ératosthène a comparé l'ombre d'un bâton à Syène et à Alexandrie."],
+  ["Les rayons du Soleil qui arrivent sur la Terre sont…","Parallèles entre eux (le Soleil est très loin)",["Partout perpendiculaires à la Terre","Courbes","Dans toutes les directions et se croisent"],"Le Soleil est très loin de la Terre : ses rayons arrivent parallèles."]
+ ]},
+/* 2 */ {name:"Ceinture orange",em:"☀️",belt:"#ff8c1a",title:"Pourquoi l'énergie solaire est plus élevée à l'équateur qu'aux pôles",
+ lesson:()=>`<h2>📜 Parchemin 3 : l'énergie solaire et la forme de la Terre</h2>
+ <p>Comme la Terre est <b>sphérique</b>, les rayons du Soleil (parallèles) n'arrivent <b>pas avec le même angle</b> partout.</p>
+ <div class="scroll-x"><table><tr><th></th><th>À l'équateur</th><th>Au cercle polaire / aux pôles</th></tr>
+ <tr><td><b>Angle des rayons</b></td><td><b>Perpendiculaires</b> à la surface</td><td><b>Inclinés</b> (obliques, rasants)</td></tr>
+ <tr><td><b>Surface éclairée par un même faisceau</b></td><td><b>Petite</b></td><td><b>Grande</b></td></tr>
+ <tr><td><b>Énergie par m²</b></td><td><b>Concentrée</b> : élevée</td><td><b>Étalée</b> : faible</td></tr>
+ <tr><td><b>Résultat</b></td><td>Il fait chaud</td><td>Il fait froid</td></tr></table></div>
+ <div class="key">💡 Comme une <b>lampe de poche</b> : si tu éclaires un mur bien en face, la tache est <b>petite et lumineuse</b>. Si tu inclines la lampe, la tache est <b>grande et peu lumineuse</b>. La quantité de lumière est la même, mais elle est <b>étalée</b>.</div>
+ <h3>🧪 Le simulateur : déplace la latitude</h3>
+ <div id="sun" class="sunbox"></div>
+ <h3>Modèle de réponse</h3>
+ <div class="model">La Terre est sphérique. À l'équateur, les rayons du Soleil arrivent perpendiculairement à la surface : l'énergie est concentrée sur une petite surface. Au niveau du cercle polaire, les rayons arrivent inclinés : la même énergie est répartie sur une plus grande surface. L'énergie solaire reçue par m² est donc plus élevée à l'équateur qu'aux pôles.</div>
+ <div class="note">Sur tes schémas (question 2 de l'activité 4), la surface touchée par le faisceau se dessine par un trait sur la Terre entre les deux rayons extérieurs : il est <b>court à l'équateur</b> et <b>long au cercle polaire</b>.</div>`,
+ init:()=>initSun(),
+ build:()=>[
+  ["Pourquoi l'énergie solaire reçue est-elle plus élevée à l'équateur qu'aux pôles ?","Parce que la Terre est sphérique : à l'équateur les rayons arrivent perpendiculaires, aux pôles ils sont inclinés et l'énergie s'étale sur une plus grande surface",["Parce que l'équateur est plus proche de la Lune","Parce que le Soleil ne brille jamais aux pôles","Parce que la Terre est plate"],"C'est la forme sphérique de la Terre qui change l'angle d'arrivée des rayons et donc la surface éclairée."],
+  ["À l'équateur, les rayons du Soleil arrivent…","Perpendiculairement à la surface",["Très inclinés","Parallèlement à la surface","Ils n'arrivent pas"],"À l'équateur, les rayons arrivent à angle droit (perpendiculaires)."],
+  ["Au niveau du cercle polaire, les rayons du Soleil arrivent…","Inclinés (obliques)",["Perpendiculaires","Ils sont absents","Plus nombreux qu'à l'équateur"],"Près des pôles, les rayons arrivent de biais : ils sont inclinés."],
+  ["Pour un même faisceau de rayons, la surface touchée à l'équateur est…","Petite",["Grande","Impossible à dessiner","La même qu'au pôle"],"Les rayons arrivent perpendiculaires : le faisceau éclaire une petite surface."],
+  ["Pour un même faisceau de rayons, la surface touchée près du pôle est…","Grande",["Petite","Nulle","La même qu'à l'équateur"],"Les rayons inclinés s'étalent : le faisceau éclaire une grande surface."],
+  ["L'énergie reçue par m² à l'équateur est…","Plus élevée qu'aux pôles (énergie concentrée)",["Plus faible qu'aux pôles","Identique partout","Nulle"],"Même énergie sur une petite surface = beaucoup d'énergie par m²."],
+  ["Si on incline une lampe de poche, la tache lumineuse devient…","Plus grande et moins lumineuse",["Plus petite et plus lumineuse","Identique","Impossible à voir"],"L'énergie de la lampe est la même, mais elle est étalée sur une plus grande surface : comme près des pôles."],
+  ["Si la Terre était plate, avec des rayons perpendiculaires partout, que se passerait-il ?","L'énergie reçue serait la même partout",["Il ferait plus froid à l'équateur","Il ferait plus chaud aux pôles qu'à l'équateur","Il ferait nuit en permanence"],"C'est la forme sphérique, donc l'inclinaison des rayons, qui crée la différence."],
+  ["Deux faisceaux identiques : A arrive à l'équateur, B arrive près d'un pôle. Quelle surface est la plus chauffée par m² ?","La surface de A (équateur)",["La surface de B (pôle)","Les deux pareil","Aucune des deux"],"A : rayons perpendiculaires, énergie concentrée sur une petite surface."],
+  ["La différence d'énergie solaire reçue selon la latitude explique…","Les différentes zones climatiques (chaude, tempérée, polaire)",["Les marées","Les saisons de la Lune","La forme des nuages"],"Plus on s'éloigne de l'équateur, moins l'énergie par m² est grande : les climats changent."],
+  ["D'après le simulateur, à 60° de latitude, l'énergie reçue par m² est environ…","La moitié de celle de l'équateur",["La même qu'à l'équateur","Le double de celle de l'équateur","Un dixième de celle de l'équateur"],"cos 60° = 0,5 : à 60° de latitude, un faisceau s'étale sur une surface deux fois plus grande. Vérifie avec le simulateur !"],
+  ["Sur le schéma, comment sont les surfaces touchées par un même faisceau ?","Courte à l'équateur, longue au cercle polaire",["Longue à l'équateur, courte au cercle polaire","Identiques","Il n'y a pas de surface touchée"],"On trace un trait entre les deux rayons extérieurs : il est court à l'équateur, long vers le pôle."],
+  ["Quelle phrase bilan est correcte ?","L'énergie solaire reçue par m² diminue de l'équateur vers les pôles, car les rayons arrivent de plus en plus inclinés sur la Terre sphérique",["L'énergie solaire reçue augmente de l'équateur vers les pôles","L'énergie solaire est la même partout sur Terre","Il fait chaud aux pôles car les rayons y sont perpendiculaires"],"Plus on va vers les pôles, plus les rayons sont inclinés et moins il y a d'énergie par m²."]
+ ]},
+/* 3 */ {name:"Ceinture verte",em:"🗺️",belt:"#2ecc71",title:"Les grandes zones climatiques",
+ lesson:()=>`<h2>📜 Parchemin 4 : polaire, tempéré, chaud</h2>
+ <p>Les grandes zones climatiques sont caractérisées par des <b>températures</b> et des <b>précipitations</b> propres à chacune.</p>
+ <div class="scroll-x"><table><tr><th>Climat</th><th>Caractéristiques simplifiées</th></tr>
+ <tr><td>🧊 <b>Polaire</b></td><td>Températures <b>froides toute l'année</b>, sans chaleur estivale (<b>10 °C au maximum</b>), hivers <b>glacials</b> (souvent −60 °C)</td></tr>
+ <tr><td>🌳 <b>Tempéré</b></td><td>Températures <b>douces en hiver</b> et <b>chaudes en été</b></td></tr>
+ <tr><td>🌴 <b>Chaud</b></td><td>Températures <b>très chaudes l'été</b> et <b>chaudes l'hiver</b></td></tr></table></div>
+ <div class="key">🔗 Lien avec le parchemin 3 : près de l'<b>équateur</b> (beaucoup d'énergie par m²) ➜ climat <b>chaud</b>. Entre les deux ➜ climat <b>tempéré</b>. Près des <b>pôles</b> (peu d'énergie par m²) ➜ climat <b>polaire</b>.</div>
+ <h3>Méthode pour identifier un climat</h3>
+ <ol><li>Regarde la température du <b>mois le plus chaud</b> (été) : jusqu'à 10 °C ➜ polaire.</li><li>Regarde la température du <b>mois le plus froid</b> (hiver) : élevée ➜ chaud ; douce (autour de quelques °C) ➜ tempéré.</li><li>Rédige : « À …, les hivers sont … (… °C) et les étés sont … (… °C) : le climat est … ».</li></ol>
+ <div class="model">À Paris, les hivers sont doux (5 °C au minimum) et les étés sont chauds (21 °C au maximum) : le climat est tempéré.</div>
+ <div class="note">Pour la carte (question 4) : colorie d'abord la légende, puis reporte les mêmes couleurs dans les carrés des villes.</div>`,
+ build:()=>[
+  ["Quelles sont les 3 grandes zones climatiques de l'activité ?","Polaire, tempérée, chaude",["Polaire, humide, sèche","Froide, chaude, pluvieuse","Désertique, tropicale, océanique"],"Le cours distingue les climats polaire, tempéré et chaud."],
+  ["Quel climat est caractérisé par des températures froides toute l'année, sans chaleur estivale (10 °C au maximum) ?","Polaire",["Tempéré","Chaud","Désertique"],"C'est la définition du climat polaire, avec des hivers glacials."],
+  ["Quel climat est caractérisé par des températures douces en hiver et chaudes en été ?","Tempéré",["Polaire","Chaud","Glacial"],"C'est la définition du climat tempéré."],
+  ["Quel climat est caractérisé par des températures très chaudes l'été et chaudes l'hiver ?","Chaud",["Polaire","Tempéré","Froid"],"C'est la définition du climat chaud."],
+  ["Une ville a 7 °C au maximum en été et −25 °C en hiver. Son climat est…","Polaire",["Tempéré","Chaud","Impossible à savoir"],"Aucune chaleur estivale (moins de 10 °C) et hiver glacial : polaire."],
+  ["Une ville a 21 °C en été et 5 °C en hiver. Son climat est…","Tempéré",["Polaire","Chaud","Glacial"],"Hiver doux et été chaud : tempéré."],
+  ["Une ville a 33 °C en été et 24 °C en hiver. Son climat est…","Chaud",["Polaire","Tempéré","Froid"],"Très chaud l'été et chaud l'hiver : climat chaud."],
+  ["Où trouve-t-on le climat chaud ?","Près de l'équateur",["Près des pôles","Seulement en montagne","Dans les océans"],"Près de l'équateur, les rayons sont perpendiculaires : beaucoup d'énergie, donc il fait chaud."],
+  ["Où trouve-t-on le climat polaire ?","Près des pôles",["Près de l'équateur","À mi-chemin entre l'équateur et les pôles","Partout"],"Près des pôles, les rayons sont très inclinés : peu d'énergie, donc il fait froid."],
+  ["Pourquoi les climats sont-ils différents selon la latitude ?","Parce que la quantité d'énergie solaire reçue par m² change avec l'inclinaison des rayons",["Parce que la Lune est plus proche","Parce que l'air est plus lourd","Parce que les océans sont plus grands"],"L'inclinaison des rayons (Terre sphérique) change l'énergie reçue : donc la température."],
+  ["Dans « hivers glacials (souvent −60 °C) », de quel climat parle-t-on ?","Polaire",["Tempéré","Chaud","Aucun"],"Hiver très froid : climat polaire."],
+  ["Pour la carte, que fais-tu en premier ?","Je colorie la légende, puis je reporte ces couleurs dans les carrés des villes",["Je colorie les villes au hasard","Je dessine de nouveaux carrés","Je colorie l'océan"],"Étape 4 de l'activité : légende d'abord, puis report des couleurs sur la carte."]
+ ]},
+/* 4 */ {name:"Ceinture bleue",em:"📈",belt:"#2f80ed",title:"Lire un diagramme ombrothermique",
+ lesson:()=>`<h2>📜 Parchemin 5 : lire un diagramme ombrothermique</h2>
+ <ul><li>Axe horizontal : les <b>12 mois</b> (J F M A M J J A S O N D).</li>
+ <li>La <b>courbe rouge</b> = <b>températures moyennes</b> de chaque mois. Axe de <b>gauche</b> en <b>°C</b>.</li>
+ <li>Les <b>barres bleues</b> = <b>précipitations</b> de chaque mois. Axe de <b>droite</b> en <b>mm</b>.</li></ul>
+ <div class="scroll-x"><table><tr><th>Je cherche…</th><th>Je lis…</th></tr>
+ <tr><td>Température moyenne <b>maximale</b></td><td>le point le <b>plus haut</b> de la courbe</td></tr>
+ <tr><td>Température moyenne <b>minimale</b></td><td>le point le <b>plus bas</b> de la courbe</td></tr>
+ <tr><td>Précipitations <b>maximales</b></td><td>la barre la <b>plus haute</b></td></tr>
+ <tr><td>Précipitations <b>minimales</b></td><td>la barre la <b>plus basse</b></td></tr></table></div>
+ <div class="key">👀 Pense à regarder la <b>bonne échelle</b> : °C à gauche (courbe), mm à droite (barres).</div>
+ <h3>🧪 Entraîne-toi sur 3 villes</h3>
+ <div id="ombrotool"></div>
+ <div class="note">Ces diagrammes sont des <b>diagrammes d'entraînement</b> (valeurs arrondies) : sur ta fiche, tu auras tes propres villes, mais la méthode est exactement la même.</div>`,
+ init:()=>initOmbro(),
+ build:()=>{
+  const out=[];
+  const optT=v=>pickN([v-9,v-6,v-3,v+3,v+6,v+9],3).map(n=>n+' °C');
+  const optP=v=>pickN([v-20,v-10,v+10,v+20,v+30].filter(n=>n>=0),3).map(n=>n+' mm');
+  CITIES.forEach(c=>{
+    const s=stat(c),svg=ombro(c);
+    out.push([`${svg}Quelle est la <b>température moyenne maximale</b> de ${c.short} ?`,s.Tx+' °C',optT(s.Tx),`Point le plus haut de la courbe rouge : ${s.Tx} °C (${monthsOf(c.T,s.Tx)}).`]);
+    out.push([`${svg}Quelle est la <b>température moyenne minimale</b> de ${c.short} ?`,s.Tn+' °C',optT(s.Tn),`Point le plus bas de la courbe rouge : ${s.Tn} °C (${monthsOf(c.T,s.Tn)}).`]);
+    out.push([`${svg}Quelles sont les <b>précipitations maximales</b> de ${c.short} ?`,s.Px+' mm',optP(s.Px),`Barre la plus haute : ${s.Px} mm (${monthsOf(c.P,s.Px)}). On lit l'axe de droite (mm).`]);
+    const def={polaire:"froid toute l'année, 10 °C au maximum, hivers glacials",tempéré:"hivers doux et étés chauds",chaud:"étés très chauds et hivers chauds"}[c.cl];
+    out.push([`${svg}Quel est le <b>climat</b> de ${c.short} ?`,"Climat "+c.cl,["Climat polaire","Climat tempéré","Climat chaud"].filter(x=>x!=="Climat "+c.cl),`${c.short} : température maximale ${s.Tx} °C, minimale ${s.Tn} °C : ${def}. C'est un climat ${c.cl}.`]);
+  });
+  const p=CITIES[1],cc=CITIES[2],sc=stat(cc);
+  out.push(["À Paris, quel(s) mois est (sont) le(s) plus chaud(s) ?","Juillet et août",["Janvier et février","Avril et mai","Novembre et décembre"],"La courbe atteint 21 °C en juillet et en août : ce sont les mois les plus chauds."]);
+  out.push([`${ombro(cc)}Quelles sont les <b>précipitations minimales</b> au Caire ?`,"0 mm (pas de pluie de mai à septembre)",["5 mm toute l'année","15 mm","30 mm"],`Aucune barre de mai à septembre : ${sc.Pn} mm. Le Caire est très sec.`]);
+  return out;
+ }},
+/* 5 */ {name:"Ceinture marron",em:"🧮",belt:"#a0643c",title:"Construire un tableau : la théorie",
+ lesson:()=>`<h2>📜 Parchemin 6 : construire un tableau</h2>
+ <p>Un tableau <b>organise plusieurs informations</b> sur un même document pour les rendre <b>plus lisibles et comparables</b>.</p>
+ <div class="scroll-x"><table><tr><th></th><th>Tableau simple (à une entrée)</th><th>Tableau à double entrée</th></tr>
+ <tr><td><b>Objectif</b></td><td>Présenter des données selon <b>un seul critère</b></td><td>Comparer des données selon <b>deux critères</b></td></tr>
+ <tr><td><b>Exemple</b></td><td>Taille d'une plantule en fonction du temps</td><td>Êtres vivants en fonction de leur environnement</td></tr></table></div>
+ <h3>Les étapes (double entrée)</h3>
+ <ol><li><b>Au brouillon</b> : compter les éléments à comparer ➜ <b>colonnes</b> (+ 1 colonne pour les titres des lignes). Compter les caractéristiques ➜ <b>lignes</b> (+ 1 ligne pour les titres des colonnes).</li>
+ <li><b>Au propre</b> : tracer le tableau <b>à la règle</b>.</li>
+ <li>Construire la <b>case double entrée</b> (en haut à gauche) avec le <b>titre général des lignes</b> et celui des <b>colonnes</b>.</li>
+ <li>Compléter les <b>titres des lignes et des colonnes</b> (<b>unités entre parenthèses</b>), puis <b>toutes les cases</b>.</li>
+ <li>Ajouter un <b>titre souligné</b> <b>sous le tableau</b> : « Tableau présentant… » (en <b>majuscules</b> pour l'activité 3).</li></ol>
+ <div class="key">Exemple du cours : 2 rapaces à comparer (buse variable, milan noir) ➜ <b>3 colonnes</b> (2 + 1). 2 caractéristiques (queue, dessous des ailes) ➜ <b>3 lignes</b> (2 + 1).</div>
+ <h3>Critères de réussite</h3>
+ <ul><li><b>Construction</b> : lignes et colonnes tracées à la règle, assez grandes.</li><li><b>Conception</b> : bon nombre de lignes et de colonnes, en-têtes précis et complets, unités entre parenthèses, titre sous le tableau (souligné).</li><li><b>Informations</b> : cases correctement complétées.</li></ul>
+ <p>👉 Va t'entraîner dans l'<b>Atelier tableaux</b> (sur la carte) pour construire de vrais tableaux !</p>`,
+ build:()=>[
+  ["À quoi sert un tableau ?","À organiser plusieurs informations pour les rendre plus lisibles et comparables",["À faire joli sur la feuille","À remplacer le titre d'un exercice","À dessiner un schéma"],"Un tableau organise l'information pour la lire et la comparer facilement."],
+  ["Un tableau à une entrée (simple) sert à…","Présenter des données selon un seul critère",["Comparer des données selon deux critères","Dessiner une carte","Écrire un texte"],"Exemple : la taille d'une plantule en fonction du temps."],
+  ["Un tableau à double entrée sert à…","Comparer des données selon deux critères",["Présenter une seule donnée","Colorier une légende","Calculer une moyenne"],"Exemple : les êtres vivants en fonction de leur environnement."],
+  ["Lequel de ces exemples nécessite un tableau à double entrée ?","Les êtres vivants en fonction de leur environnement",["La taille d'une plantule en fonction du temps","La température d'un seul jour","Le nom d'une planète"],"Deux critères : être vivant et environnement. La plantule n'a qu'un critère (le temps)."],
+  ["On veut comparer 2 rapaces selon 2 caractéristiques. Combien faut-il de colonnes ?","3 colonnes",["2 colonnes","4 colonnes","1 colonne"],"2 rapaces + 1 colonne pour les titres des lignes = 3 colonnes."],
+  ["Et combien de lignes pour ces 2 caractéristiques ?","3 lignes",["2 lignes","4 lignes","1 ligne"],"2 caractéristiques + 1 ligne pour les titres des colonnes = 3 lignes."],
+  ["Pourquoi ajoute-t-on une colonne et une ligne en plus ?","Pour écrire les titres des lignes et des colonnes",["Pour laisser de la place vide","Pour écrire le titre du tableau","Pour dessiner"],"La première colonne contient les titres des lignes, la première ligne contient les titres des colonnes."],
+  ["Que met-on dans la case double entrée (en haut à gauche) ?","Le titre général des lignes et celui des colonnes, séparés par un trait oblique",["Le titre du tableau","Rien du tout","Les unités uniquement"],"Exemple : « Rapaces » (colonnes) en haut à droite et « Caractéristiques » (lignes) en bas à gauche."],
+  ["Où écrit-on les unités ?","Entre parenthèses dans les en-têtes (ex. Taille (en cm))",["Dans toutes les cases","Dans le titre uniquement","On ne les écrit pas"],"Les unités sont précisées entre parenthèses dans les en-têtes de lignes ou de colonnes."],
+  ["Où place-t-on le titre du tableau ?","Sous le tableau, souligné",["Au-dessus, sans le souligner","Dans la première case","Nulle part"],"Titre indiqué sous le tableau et souligné (en majuscules pour l'activité 3)."],
+  ["Comment commence le titre d'un tableau ?","Par « Tableau présentant… »",["Par « Voici… »","Par « Exercice… »","Par « Conclusion… »"],"Exemple : Tableau présentant deux caractéristiques de deux rapaces."],
+  ["Comment trace-t-on les lignes et les colonnes ?","À la règle, assez grandes pour y écrire toutes les informations",["À main levée, très petites","En pointillés légers","Au crayon de couleur uniquement"],"Critère de construction : tracé à la règle et de taille suffisante."],
+  ["Un tableau climatique compare 3 villes selon 4 données (Tmax, Tmin, Pmax, Pmin). Combien de colonnes et de lignes ?","4 colonnes et 5 lignes",["3 colonnes et 4 lignes","3 colonnes et 5 lignes","4 colonnes et 4 lignes"],"3 villes + 1 colonne de titres = 4 colonnes. 4 données + 1 ligne de titres = 5 lignes."],
+  ["Dans le tableau Forêt / Ville / Désert × Animal / Végétal, où place-t-on « cactus » ?","À l'intersection de la ligne « Désert » et de la colonne « Végétal »",["À l'intersection de « Forêt » et « Animal »","Dans la case double entrée","Dans le titre"],"Un cactus est un végétal qui vit dans le désert."],
+  ["Quel est le bon ordre pour construire un tableau ?","Compter lignes et colonnes au brouillon ➜ tracer à la règle ➜ case double entrée ➜ titres et cases ➜ titre souligné",["Titre souligné ➜ remplir les cases ➜ compter ➜ tracer","Remplir les cases ➜ tracer ➜ compter","Colorier ➜ écrire les cases ➜ tracer"],"Toujours préparer au brouillon avant de tracer proprement."],
+  ["Dans un tableau, une ligne est…","Horizontale (une colonne est verticale)",["Verticale","Diagonale","Colorée"],"Ligne = horizontale ; colonne = verticale."]
+ ]},
+/* 6 */ {name:"Ceinture noire",em:"🏯",belt:"#1a1a2e",title:"Boss final : défis mixtes",
+ lesson:()=>`<h2>📜 Parchemin final</h2>
+ <p>15 questions tirées au hasard dans tout le cours : météo et climat, Terre et Soleil, énergie solaire, zones climatiques, diagrammes et tableaux.</p>
+ <div class="key">Rappelle-toi :<br>🌦️ Météo = quelques heures/jours ; climat = moyenne sur plusieurs décennies.<br>☀️ Équateur : rayons perpendiculaires, énergie concentrée ; pôles : rayons inclinés, énergie étalée.<br>🧮 Tableau : lignes + 1, colonnes + 1, titre souligné sous le tableau.</div>`,
+ build:()=>{const cnt={0:3,1:2,2:3,3:2,4:3,5:2};return shuffle(Object.keys(cnt).flatMap(i=>shuffle(LEVELS[i].build()).slice(0,cnt[i])))}},
+/* 7 */ {name:"Mode Éclair",em:"⚡",belt:"#d62839",title:"12 questions au hasard",bonus:true,hidden:true,
+ lesson:()=>`<h2>⚡ Mode Éclair</h2><p>12 questions prises au hasard dans toutes les ceintures (sans note). Parfait pour t'échauffer juste avant l'évaluation !</p>`,
+ build:()=>shuffle([0,1,2,3,4,5].flatMap(i=>LEVELS[i].build())).slice(0,12)}
+];
+const CORE=[0,1,2,3,4,5,6];
+LEVELS.forEach((_,i)=>{S.lvlOk[i]=0;S.lvlDone[i]=false;S.lvlN[i]=0});
+function totals(){let ok=0,n=0;CORE.forEach(i=>{if(S.lvlDone[i]){ok+=S.lvlOk[i];n+=S.lvlN[i]}});return {ok,n}}
+const grade=()=>{const t=totals();return t.n?t.ok/t.n*20:0};
+
+/* ================= WIDGETS ================= */
+function initSun(){
+  const el=$('#sun');if(!el)return;
+  el.innerHTML=`<label>Latitude : <b id="latv">0</b>° <small id="latn">(équateur)</small><input type="range" id="lat" min="0" max="75" value="0" step="1" style="width:100%" aria-label="Latitude"></label>
+  <svg id="sunsvg" viewBox="0 0 400 260" role="img" aria-label="Faisceau de rayons du Soleil sur la Terre"></svg><div id="sunout" class="key"></div>`;
+  $('#lat').oninput=drawSun;drawSun();
+}
+function drawSun(){
+  const deg=+$('#lat').value,phi=deg*Math.PI/180,cx=270,cy=130,r=100,w=26;
+  const yP=cy-r*Math.sin(phi),y1=yP-w/2,y2=yP+w/2;
+  const xs=y=>cx-Math.sqrt(Math.max(r*r-(y-cy)*(y-cy),0));
+  const x1=xs(y1),x2=xs(y2),ym=(y1+y2)/2,xm=xs(ym);
+  const L=Math.hypot(x2-x1,y2-y1);
+  let g=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="#3b8be8" fill-opacity=".35" stroke="currentColor" stroke-width="2"/>
+  <line x1="${cx-r}" x2="${cx+r}" y1="${cy}" y2="${cy}" stroke="currentColor" stroke-dasharray="5 4" stroke-opacity=".6"/>
+  <text x="${cx+r+4}" y="${cy+4}" font-size="11" fill="currentColor" font-weight="700">Équateur</text>
+  <text x="${cx}" y="${cy-r-6}" text-anchor="middle" font-size="11" fill="currentColor" font-weight="700">Pôle Nord</text>
+  <circle cx="45" cy="130" r="22" fill="#ffc94a"/><text x="45" y="168" text-anchor="middle" font-size="11" fill="currentColor" font-weight="700">Soleil</text>
+  <polygon points="70,${y1} ${x1},${y1} ${x2},${y2} 70,${y2}" fill="#ffc94a" fill-opacity=".35"/>
+  <line x1="70" y1="${y1}" x2="${x1}" y2="${y1}" stroke="#e8a100" stroke-width="2"/>
+  <line x1="70" y1="${ym}" x2="${xm}" y2="${ym}" stroke="#e8a100" stroke-width="2"/>
+  <line x1="70" y1="${y2}" x2="${x2}" y2="${y2}" stroke="#e8a100" stroke-width="2"/>
+  <line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#d62839" stroke-width="6" stroke-linecap="round"/>`;
+  $('#sunsvg').innerHTML=g;
+  const c=Math.cos(phi),ang=90-deg;
+  $('#latv').textContent=deg;$('#latn').textContent=deg===0?'(équateur)':deg>=66?'(cercle polaire ou au-delà)':'';
+  $('#sunout').innerHTML=`Angle des rayons avec la surface : <b>${ang}°</b> ${ang>=85?'(perpendiculaires)':ang<=25?'(très inclinés)':'(inclinés)'}<br>Surface éclairée par le faisceau (trait rouge) : <b>×${(1/c).toFixed(1)}</b> par rapport à l'équateur (longueur ${Math.round(L)} contre ${w}).<br>Énergie reçue par m² : <b>${Math.round(c*100)} %</b> de celle de l'équateur.`;
+}
+function initOmbro(){
+  const el=$('#ombrotool');if(!el)return;
+  el.innerHTML=`<label>Ville : <select id="citySel">${CITIES.map((c,i)=>`<option value="${i}">${c.name}</option>`).join('')}</select></label><div id="cityOut"></div>`;
+  $('#citySel').onchange=drawCity;drawCity();
+}
+function drawCity(){
+  const c=CITIES[$('#citySel').value],s=stat(c);
+  $('#cityOut').innerHTML=ombro(c)+`<button class="btn ghost sm" onclick="this.nextElementSibling.style.display='block';this.style.display='none'">👀 Voir les valeurs à lire</button><div class="key" style="display:none">Tmax = <b>${s.Tx} °C</b> (${monthsOf(c.T,s.Tx)}) · Tmin = <b>${s.Tn} °C</b> (${monthsOf(c.T,s.Tn)})<br>Pmax = <b>${s.Px} mm</b> (${monthsOf(c.P,s.Px)}) · Pmin = <b>${s.Pn} mm</b><br>Climat : <b>${c.cl}</b></div>`;
+}
+
+/* ================= ÉCRANS ================= */
+const mascot=`<svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="52" r="38" fill="#14142b"/><rect x="14" y="40" width="72" height="24" rx="10" fill="#f2c9a0"/><circle cx="36" cy="52" r="5" fill="#14142b"/><circle cx="64" cy="52" r="5" fill="#14142b"/><circle cx="37.6" cy="50.4" r="1.8" fill="#fff"/><circle cx="65.6" cy="50.4" r="1.8" fill="#fff"/><rect x="12" y="29" width="76" height="9" fill="#d62839"/><path d="M88 33 l11 -9 l-2 14z M88 35 l10 9 l-10 -2z" fill="#d62839"/></svg>`;
+
+function home(){
+  const anyDone=CORE.some(i=>S.lvlDone[i]),allDone=CORE.every(i=>S.lvlDone[i]);
+  let h=`<section class="card hero pop">${mascot}<h1>Ninja SVT : objectif 20 / 20</h1>
+  <p>Météo et climat, énergie solaire et zones climatiques, et construction de tableaux. Lis chaque parchemin, puis combats !</p>
+  <p><b>Plan conseillé :</b> ceintures 1 à 4, puis l'Atelier tableaux et l'Atelier rédaction, puis ceintures 5 à 7, et la fiche mémo.</p>`;
+  if(anyDone){const t=totals();h+=`<p class="big">${fmt(grade())}<small style="font-size:1.2rem"> / 20</small></p><p>${allDone?'Ta note du premier essai':'Note provisoire'} (${t.ok} / ${t.n} du premier coup)</p>`}
+  h+=`<div class="btns"><button class="btn red" onclick="startLevel(7)">⚡ Mode Éclair</button><button class="btn ghost" onclick="memo()">📋 Fiche mémo</button></div>
+  <div class="btns" style="margin-top:10px"><button class="btn ghost" onclick="atelier()">🧮 Atelier tableaux</button><button class="btn ghost" onclick="redaction()">✍️ Atelier rédaction</button></div></section><div class="map">`;
+  LEVELS.forEach((L,i)=>{
+    if(L.hidden)return;
+    const locked=i>S.unlocked;
+    const sc=S.lvlDone[i]?`${S.lvlOk[i]} / ${S.lvlN[i]}`:(locked?'🔒':'À faire');
+    h+=`<button class="lv" style="--belt:${L.belt}" ${locked?'disabled':''} onclick="startLevel(${i})"><span class="em">${L.em}</span><span><b>${i+1}. ${L.name}</b><small>${L.title}</small></span><span class="sc">${S.lvlDone[i]&&S.lvlOk[i]===S.lvlN[i]?'⭐ ':''}${sc}</span></button>`;
+  });
+  h+=`</div>`;
+  app.innerHTML=h;window.scrollTo(0,0);
+}
+
+function memo(){
+  app.innerHTML=`<section class="card lesson pop"><h2>📋 Fiche mémo ninja</h2>
+  <h3>🌦️ Météo ou climat</h3>
+  <p><b>Météo</b> = le temps qu'il fait aujourd'hui et pendant les jours à venir (quelques heures, quelques jours).<br><b>Climat</b> = la moyenne des conditions météo sur plusieurs décennies. 1 décennie = 10 ans.</p>
+  <div class="model">L'épisode du 21 septembre 2025 relève de la météo. En effet, d'après l'introduction, les inondations se sont produites en quelques heures, un jour précis. Or, d'après le document 1, la météo correspond au temps qu'il fait aujourd'hui et pendant les jours à venir, alors que le climat est la moyenne des conditions météo sur plusieurs décennies.</div>
+  <h3>🌍 La Terre et le Soleil</h3>
+  <p>Terre = 3e planète, gravite autour du Soleil (une étoile) en 1 an, tourne sur elle-même en 24 h. Elle est <b>sphérique</b> (ombre ronde lors des éclipses de Lune ; ombres des bâtons d'Ératosthène). Les rayons du Soleil arrivent <b>parallèles</b>.</p>
+  <h3>☀️ L'énergie solaire</h3>
+  <div class="model">La Terre est sphérique. À l'équateur, les rayons arrivent perpendiculairement : l'énergie est concentrée sur une petite surface. Au cercle polaire, les rayons sont inclinés : la même énergie est étalée sur une grande surface. L'énergie reçue par m² est donc plus élevée à l'équateur qu'aux pôles.</div>
+  <h3>🗺️ Les climats</h3>
+  <p>🧊 <b>Polaire</b> : froid toute l'année, 10 °C au maximum, hivers glacials.<br>🌳 <b>Tempéré</b> : doux en hiver, chaud en été.<br>🌴 <b>Chaud</b> : très chaud l'été, chaud l'hiver.<br>Chaud près de l'équateur, polaire près des pôles.</p>
+  <div class="model">À Paris, les hivers sont doux (5 °C) et les étés sont chauds (21 °C) : le climat est tempéré.</div>
+  <h3>📈 Diagramme ombrothermique</h3>
+  <p>Courbe rouge = températures (°C, axe de gauche). Barres bleues = précipitations (mm, axe de droite). Max = le plus haut, min = le plus bas.</p>
+  <h3>🧮 Construire un tableau</h3>
+  <ol><li>Brouillon : colonnes = éléments + 1 ; lignes = caractéristiques + 1.</li><li>Tracer à la règle.</li><li>Case double entrée (titre des lignes / titre des colonnes).</li><li>En-têtes avec unités entre parenthèses, puis les cases.</li><li>Titre souligné sous le tableau : « Tableau présentant… » (en majuscules pour l'activité 3).</li></ol>
+  <div class="btns"><button class="btn ghost" onclick="home()">⬅ Carte</button></div></section>`;
+  window.scrollTo(0,0);
+}
+
+/* ========== QCM ========== */
+function startLevel(i){
+  S.li=i;const L=LEVELS[i];
+  S.qs=L.build();
+  S.queue=S.qs.map((_,k)=>k);S.failed={};S.lvlOk[i]=0;S.lvlDone[i]=false;S.lvlN[i]=S.qs.length;S.done=0;
+  app.innerHTML=`<section class="card lesson pop" style="border-top:12px solid ${L.belt}">${L.lesson()}
+  <div class="btns"><button class="btn ghost" onclick="home()">⬅ Carte</button><button class="btn" onclick="showQ()">J'ai compris : au combat ! ⚔️</button></div></section>`;
+  if(L.init)L.init();
+  window.scrollTo(0,0);
+  say(i===0?"Bienvenue au dojo, jeune ninja ! Lis bien le parchemin, puis c'est parti !":"Nouveau parchemin, nouvelle ceinture ! Lis bien, puis au combat !");
+}
+
+function showQ(){
+  const L=LEVELS[S.li];
+  if(!S.queue.length)return levelEnd();
+  const k=S.queue[0],q=S.qs[k];
+  S.k=k;S.answered=false;
+  const wr=[...new Set(q[2].filter(x=>x!==q[1]))];
+  S.opts=shuffle([{t:q[1],c:1}].concat(wr.map(t=>({t,c:0}))));
+  const N=S.qs.length,pct=Math.round(S.done/N*100);
+  const letters=['A','B','C','D'];
+  app.innerHTML=`<section class="pop">
+   <details class="peek"><summary>📜 Revoir le parchemin</summary><div class="lesson">${L.lesson()}</div></details>
+   <div class="qhead"><span>${L.em} ${L.name}</span><span>${S.done} / ${N} réussies</span></div>
+   <div class="bar" style="--belt:${L.belt==='#f3f3f3'?'#9aa3d8':L.belt==='#1a1a2e'?'#d62839':L.belt}" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"><i style="width:${pct}%"></i></div>
+   <div class="card" style="margin-top:14px">
+     ${S.failed[k]?'<span class="tag">🔁 Rattrapage : tu vas y arriver !</span>':''}
+     <p class="q">${q[0]}</p>
+     <div class="opts">${S.opts.map((o,i)=>`<button class="opt" onclick="pick(${i})"><span class="k">${letters[i]}</span><span>${o.t}</span></button>`).join('')}</div>
+     <div id="fb"></div>
+   </div></section>`;
+  if(L.init)L.init();
+  window.scrollTo(0,0);
+}
+
+function pick(i){
+  if(S.answered)return;S.answered=true;
+  const k=S.k,q=S.qs[k],o=S.opts[i];
+  const btns=[...document.querySelectorAll('.opt')];btns.forEach(b=>b.disabled=true);
+  let fb;
+  if(o.c){
+    btns[i].classList.add('good');
+    S.queue.shift();S.done++;
+    if(!S.failed[k])S.lvlOk[S.li]++;
+    S.streak++;setStreak();
+    sfxGood();flash(S.streak>=3?'🔥 COMBO x'+S.streak+' !':'⚔️ Touché !');
+    let msg=GOOD[Math.floor(Math.random()*GOOD.length)];
+    if(S.streak===3)msg="Trois d'affilée ! Tu es en mode ninja rapide !";
+    else if(S.streak===5)msg="Cinq d'affilée ! Les ombres n'ont aucune chance contre toi !";
+    else if(S.streak===10)msg="Dix d'affilée ! Tu deviens un ninja légendaire !";
+    else if(S.streak===20)msg="Vingt d'affilée ! Maître ninja des sciences, tu es imbattable !";
+    setTimeout(()=>say(msg),250);
+    fb=`<div class="fb good"><b>✅ Bonne réponse !</b>${q[3]}</div>`;
+  }else{
+    btns[i].classList.add('bad');
+    S.failed[k]=1;S.queue.shift();S.queue.push(k);
+    S.streak=0;setStreak();
+    sfxBad();
+    setTimeout(()=>say(BAD[Math.floor(Math.random()*BAD.length)]),250);
+    fb=`<div class="fb bad"><b>❌ Pas tout à fait…</b>${q[3]}<br><em>Cette question reviendra à la fin de la ceinture pour que tu la maîtrises.</em></div>`;
+  }
+  $('#fb').innerHTML=fb+`<div class="btns"><button class="btn" onclick="showQ()" id="nextBtn">Suivant ➜</button></div>`;
+  $('#nextBtn').focus({preventScroll:true});
+  $('#fb').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function levelEnd(){
+  const L=LEVELS[S.li],N=S.qs.length,ok=S.lvlOk[S.li];
+  S.lvlDone[S.li]=true;
+  if(!L.bonus)S.unlocked=Math.max(S.unlocked,Math.min(S.li+1,6));
+  const last=CORE.every(i=>S.lvlDone[i]);
+  const perfect=ok===N;
+  sfxWin();
+  say(perfect?"Sans aucune erreur ! Tu es un ninja exceptionnel !":"Terminé ! Tu as maîtrisé toutes les questions. Bravo jeune ninja !");
+  const next=(!L.bonus&&S.li<6)?`<button class="btn" onclick="startLevel(${S.li+1})">Ceinture suivante ➜</button>`:(last?`<button class="btn" onclick="finalScreen()">Voir ma note finale 🏁</button>`:'');
+  app.innerHTML=`<section class="card center pop" style="--belt:${L.belt}">
+   <div style="font-size:3rem">${perfect?'🏆':'🥷'}</div>
+   <h2>${L.bonus?'Mission accomplie !':L.name+' obtenue !'}</h2><div class="belt"></div>
+   <p class="big">${ok} / ${N}</p>
+   <p>${perfect?'Sans une seule erreur au premier essai : parfait !':'bonnes réponses du premier coup. Les autres, tu les as corrigées. Rejoue pour viser le sans-faute !'}</p>
+   <div class="btns">
+     <button class="btn ghost" onclick="startLevel(${S.li})">🔁 Rejouer</button>
+     ${next}
+     <button class="btn ghost" onclick="home()">🗺️ Carte</button>
+   </div></section>`;
+  window.scrollTo(0,0);
+}
+
+function finalScreen(){
+  const g=grade(),t=totals(),perfect=t.ok===t.n;
+  const msg=perfect?"20 sur 20 ! Tu es le Maître ninja des sciences de la vie et de la Terre !":g>=16?"Très beau score, ninja ! Rejoue les ceintures pour viser le 20 sur 20 !":g>=12?"Bon début, ninja ! Rejoue les ceintures où tu as hésité pour viser le 20 sur 20 !":"L'entraînement fait les grands maîtres. Relis les parchemins et la fiche mémo, puis rejoue les ceintures !";
+  sfxWin();setTimeout(()=>say(msg),400);
+  app.innerHTML=`<section class="card center pop">
+   <div style="font-size:3.2rem">${perfect?'👑':'🥷'}</div>
+   <h2>${perfect?'MAÎTRE NINJA DES SCIENCES':'Ta note finale'}</h2>
+   <p class="big">${fmt(g)} / 20</p>
+   <p>${t.ok} bonnes réponses du premier coup sur ${t.n}.</p>
+   <p><b>${msg}</b></p>
+   <p>Avant de dormir : relis la <b>fiche mémo</b>, puis refais un tableau sur ta feuille !</p>
+   <div class="btns"><button class="btn" onclick="memo()">📋 Fiche mémo</button><button class="btn ghost" onclick="home()">🗺️ Rejouer des ceintures</button></div></section>`;
+  window.scrollTo(0,0);
+}
+
+/* ========== ATELIER TABLEAUX ========== */
+const cl=(all,none,o)=>Object.assign({all:all||[],none:none||[]},o||{});
+function climRows(){
+  const rows=[['temperature','maxim'],['temperature','minim'],['precipitation','maxim'],['precipitation','minim']];
+  const m=CITIES.map(c=>{const s=stat(c);return [s.Tx,s.Tn,s.Px,s.Pn]});
+  const exp=[[null].concat(CITIES.map(c=>cl([norm(c.short.replace('Le ',''))])))];
+  rows.forEach((r,ri)=>exp.push([cl(r,[],{unit:true})].concat(m.map(v=>cl([String(v[ri])],[],{eq:true})))));
+  const model=[['Villes / Données'].concat(CITIES.map(c=>c.short)),
+   ['Température moyenne maximale (en °C)'].concat(m.map(v=>v[0])),
+   ['Température moyenne minimale (en °C)'].concat(m.map(v=>v[1])),
+   ['Précipitations moyennes maximales (en mm)'].concat(m.map(v=>v[2])),
+   ['Précipitations moyennes minimales (en mm)'].concat(m.map(v=>v[3]))];
+  return {exp,model};
+}
+function buildEX(){
+  const cr=climRows();
+  return [
+  {id:'rapaces',name:"Les deux rapaces (texte)",type:"Double entrée",
+   text:"« Deux caractéristiques permettent de différencier la buse variable et le milan noir, deux espèces de rapaces. L'extrémité de la queue de la buse variable est arrondie, alors que celle du milan noir est droite. Le dessous des ailes de la buse présente une bande claire, que ne possède pas celui du milan. »",
+   hint:"2 rapaces et 2 caractéristiques : combien de colonnes ? de lignes ? (réponse : 3 et 3)",
+   rows:3,cols:3,corner:{tr:['rapace'],bl:['caracteristique']},
+   exp:[[null,cl(['buse']),cl(['milan'])],[cl(['queue']),cl(['arrondie']),cl(['droite'])],[cl(['aile']),cl(['bande','claire'],['pas']),cl(['pas','bande'])]],
+   model:[['Rapaces / Caractéristiques','Buse variable','Milan noir'],['Extrémité de la queue','Arrondie','Droite'],['Dessous des ailes','Une bande claire','Pas de bande claire']],
+   title:{all:['tableau','presentant','rapace']},titleModel:"Tableau présentant deux caractéristiques de deux rapaces"},
+  {id:'plantule',name:"La croissance d'une plantule",type:"Tableau simple",
+   text:"Au cours de sa croissance, une plantule mesure 0,8 cm au bout de 2 jours, 1,5 cm au bout de 4 jours, 2,7 cm au bout de 6 jours et 4 cm au bout de 8 jours.",
+   hint:"Un seul critère (le temps) : tableau simple. Ligne 1 : la taille. Ligne 2 : le temps. N'oublie pas les unités entre parenthèses !",
+   rows:2,cols:5,corner:null,
+   exp:[[cl(['taille','cm'],[],{unit:true}),cl(['0,8'],[],{eq:true}),cl(['1,5'],[],{eq:true}),cl(['2,7'],[],{eq:true}),cl(['4'],[],{eq:true})],[cl(['temps','jour'],[],{unit:true}),cl(['2'],[],{eq:true}),cl(['4'],[],{eq:true}),cl(['6'],[],{eq:true}),cl(['8'],[],{eq:true})]],
+   model:[['Taille (en cm)','0,8','1,5','2,7','4'],['Temps (en jours)','2','4','6','8']],
+   title:{all:['tableau','presentant','plantule']},titleModel:"Tableau présentant la taille d'une plantule en fonction du temps"},
+  {id:'vivants',name:"Les êtres vivants et leur environnement",type:"Double entrée",
+   text:"En forêt, on trouve des écureuils et des sangliers (animaux) et des chênes (végétaux). En ville, on trouve des souris et des pigeons (animaux) et des platanes (végétaux). Dans le désert, on trouve des scorpions et des chameaux (animaux) et des cactus (végétaux).",
+   hint:"Lignes : les environnements. Colonnes : le type d'être vivant. 3 environnements + 1 = 4 lignes ; 2 types + 1 = 3 colonnes.",
+   rows:4,cols:3,corner:{tr:['etre'],bl:['environnement']},
+   exp:[[null,cl(['animal']),cl(['vegetal'])],[cl(['foret']),cl(['ecureuil','sanglier']),cl(['chene'])],[cl(['ville']),cl(['souris','pigeon']),cl(['platane'])],[cl(['desert']),cl(['scorpion','chameau']),cl(['cactus'])]],
+   model:[['Être vivant / Environnement','Animal','Végétal'],['Forêt','Écureuil, Sanglier','Chêne'],['Ville','Souris, Pigeon','Platane'],['Désert','Scorpion, Chameau','Cactus']],
+   title:{all:['tableau','presentant','etre','vivant','environnement']},titleModel:"Tableau présentant les êtres vivants en fonction de leur environnement"},
+  {id:'climats',name:"Les températures et précipitations de 3 villes",type:"Double entrée (activité 3)",
+   text:"À l'aide des diagrammes ci-dessous (Nuuk, Paris, Le Caire), construis un tableau donnant les températures moyennes maximales et minimales et les précipitations moyennes maximales et minimales. Titre en MAJUSCULES et souligné.",
+   hint:"3 villes + 1 = 4 colonnes ; 4 données + 1 = 5 lignes. Unités entre parenthèses : (en °C) et (en mm).",
+   diagrams:true,rows:5,cols:4,corner:{tr:['ville'],bl:['']},
+   exp:cr.exp,model:cr.model,
+   title:{all:['tableau','presentant'],upper:true},titleModel:"TABLEAU PRÉSENTANT LES TEMPÉRATURES ET LES PRÉCIPITATIONS DE TROIS VILLES"}
+  ];
+}
+let EXS=null,CUR=null;
+function atelier(){
+  EXS=EXS||buildEX();
+  app.innerHTML=`<section class="card lesson pop"><h2>🧮 Atelier tableaux</h2>
+  <p>Choisis un exercice, construis le tableau ici, puis clique sur <b>Vérifier</b>. Ensuite, <b>refais-le sur ta feuille, à la règle</b> : c'est ça qui sera évalué !</p>
+  <div class="map">${EXS.map((e,i)=>`<button class="lv" style="--belt:#a0643c" onclick="openEx(${i})"><span class="em">${['🦅','🌱','🌳','🌡️'][i]}</span><span><b>${e.name}</b><small>${e.type}</small></span></button>`).join('')}</div>
+  <div class="btns"><button class="btn ghost" onclick="home()">⬅ Carte</button></div></section>`;
+  window.scrollTo(0,0);
+}
+function openEx(i){
+  const e=EXS[i];CUR=e;
+  let t='<table class="tb">';
+  for(let r=0;r<e.rows;r++){t+='<tr>';for(let c=0;c<e.cols;c++){
+    if(r===0&&c===0&&e.corner)t+=`<td class="corner"><input class="tr" id="g_tr" placeholder="titre des colonnes" aria-label="Titre général des colonnes"><input class="bl" id="g_bl" placeholder="titre des lignes" aria-label="Titre général des lignes"></td>`;
+    else t+=`<td><input id="g_${r}_${c}" autocomplete="off" aria-label="Case ligne ${r+1} colonne ${c+1}"></td>`;
+  }t+='</tr>'}
+  t+='</table>';
+  app.innerHTML=`<section class="card lesson pop"><h2>🧮 ${e.name}</h2><p><span class="note" style="display:inline-block;margin:0">${e.type}</span></p>
+  <p>${e.text}</p>${e.diagrams?`<div class="scroll-x">${CITIES.map(ombro).join('')}</div>`:''}
+  <div class="note">💡 ${e.hint}</div>
+  ${t}
+  <label><small>Titre du tableau (sous le tableau, souligné)</small><input type="text" class="title" id="g_title" aria-label="Titre du tableau" placeholder="Tableau présentant…"></label>
+  <label style="display:block;margin-top:10px"><input type="checkbox" id="g_rule"> J'ai refait ce tableau sur ma feuille <b>à la règle</b></label>
+  <div id="res"></div>
+  <div class="btns"><button class="btn ghost" onclick="atelier()">⬅ Exercices</button><button class="btn" onclick="checkEx()">✅ Vérifier</button></div></section>`;
+  window.scrollTo(0,0);
+}
+function cellOk(spec,v){
+  const n=norm(v),raw=(v||'').toLowerCase();
+  if(!n)return false;
+  if(spec.eq)return n===spec.all[0];
+  if(!spec.all.every(t=>n.includes(t)))return false;
+  if(spec.none.some(t=>n.includes(t)))return false;
+  if(spec.unit&&!(raw.includes('(')&&raw.includes(')')))return false;
+  return true;
+}
+function checkEx(){
+  const e=CUR;let head=0,headOk=0,info=0,infoOk=0,unit=0,unitOk=0;const bad=[];
+  for(let r=0;r<e.rows;r++)for(let c=0;c<e.cols;c++){
+    const spec=e.exp[r][c];if(!spec)continue;
+    const el=$(`#g_${r}_${c}`),ok=cellOk(spec,el.value);
+    el.classList.remove('ok','ko');el.classList.add(ok?'ok':'ko');
+    const isHead=(r===0||c===0);
+    if(isHead){head++;if(ok)headOk++}else{info++;if(ok)infoOk++}
+    if(spec.unit){unit++;if(ok)unitOk++}
+    if(!ok)bad.push(`ligne ${r+1}, colonne ${c+1} ➜ <b>${e.model[r][c]}</b>`);
+  }
+  if(e.corner){
+    const tr=$('#g_tr'),bl=$('#g_bl');
+    const okTr=e.corner.tr.every(t=>norm(tr.value).includes(t))&&norm(tr.value)!=='';
+    const okBl=e.corner.bl.every(t=>norm(bl.value).includes(t))&&norm(bl.value)!=='';
+    tr.classList.remove('ok','ko');bl.classList.remove('ok','ko');tr.classList.add(okTr?'ok':'ko');bl.classList.add(okBl?'ok':'ko');
+    head+=2;headOk+=(okTr?1:0)+(okBl?1:0);
+    if(!okTr||!okBl)bad.push(`case double entrée ➜ <b>${e.model[0][0]}</b>`);
+  }
+  const tv=$('#g_title').value,tn=norm(tv);
+  const titleOk=e.title.all.every(t=>tn.includes(t))&&(!e.title.upper||(tv===tv.toUpperCase()&&tv.length>8));
+  const ruleOk=$('#g_rule').checked;
+  const items=[
+   [ruleOk,"Construction : j'ai tracé les lignes et colonnes à la règle sur ma feuille"],
+   [headOk===head,`Conception : en-têtes précis et complets (${headOk}/${head})`],
+   [unit===0||unitOk===unit,"Conception : unités entre parenthèses"+(unit?` (${unitOk}/${unit})`:'')],
+   [titleOk,"Conception : titre « Tableau présentant… »"+(e.title.upper?" en MAJUSCULES":"")+", sous le tableau, souligné"],
+   [infoOk===info,`Informations : cases complétées correctement (${infoOk}/${info})`]
+  ];
+  const score=items.filter(x=>x[0]).length;
+  const face=score===5?'🟢 Tableau réussi !':score>=3?'🟡 Presque !':'🔴 À retravailler';
+  $('#res').innerHTML=`<h3>${face}</h3><ul class="crit">${items.map(x=>`<li class="${x[0]?'y':'n'}">${x[0]?'✅':'❌'} ${x[1]}</li>`).join('')}</ul>
+  ${bad.length?`<div class="note"><b>À corriger :</b><br>${bad.slice(0,8).join('<br>')}${bad.length>8?'<br>…':''}</div>`:''}
+  ${titleOk?'':`<div class="note">Titre attendu, par exemple : <b>${e.titleModel}</b></div>`}
+  <div class="btns"><button class="btn ghost sm" onclick="showModel()">👁️ Voir le tableau modèle</button></div><div id="mod"></div>`;
+  if(score===5){sfxWin();say("Tableau parfait ! Maintenant, refais-le à la règle sur ta feuille. Bravo, jeune ninja !")}
+  else{sfxBad();say("Presque, jeune ninja ! Regarde ce qu'il faut corriger, puis réessaie.")}
+  $('#res').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+function showModel(){
+  const e=CUR;
+  $('#mod').innerHTML=`<table class="tb">${e.model.map((r,ri)=>`<tr>${r.map((c,ci)=>`<td style="text-align:center;padding:6px;font-weight:${(ri===0||ci===0)?800:600}">${c}</td>`).join('')}</tr>`).join('')}</table><p style="text-align:center"><u>${e.titleModel}</u></p>`;
+}
+
+/* ========== ATELIER RÉDACTION ========== */
+const RED=[
+ {name:"Météo ou climat ? (question à 2 points)",
+  prompt:"À l'aide de l'introduction et du document 1, indiquer si l'épisode du 21 septembre 2025 relève de la météo ou du climat. Justifier la réponse.",
+  ctx:"Introduction : « plusieurs villes du sud de la France ont connu en quelques heures d'importantes inondations. » Document 1 : MÉTÉO = le temps qu'il fait aujourd'hui et pendant les jours à venir. CLIMAT = la moyenne des conditions météo sur plusieurs décennies (une décennie = 10 ans).",
+  crit:[
+   ["Je réponds clairement : c'est de la météo",t=>t.includes('meteo')&&!/(releve du|c est du|est du|agit du) climat/.test(t)],
+   ["J'utilise l'introduction : « en quelques heures » / un jour précis",t=>/(quelques heures|en une journee|un jour|21 septembre|dimanche|ponctuel)/.test(t)],
+   ["Je cite la définition de la météo (temps qu'il fait aujourd'hui, jours à venir)",t=>/(aujourd|jours a venir|temps qu il fait)/.test(t)],
+   ["Je cite la définition du climat (moyenne sur plusieurs décennies)",t=>t.includes('moyenne')&&/(decennie|plusieurs|dizaines)/.test(t)],
+   ["J'emploie un mot de justification (car, en effet, d'après, or…)",t=>/(car|en effet|parce que|d apres|puisque|or )/.test(t)]
+  ],
+  model:"L'épisode du 21 septembre 2025 relève de la météo. En effet, d'après l'introduction, les inondations se sont produites en quelques heures, un jour précis (le dimanche 21 septembre 2025). Or, d'après le document 1, la météo correspond au temps qu'il fait aujourd'hui et pendant les jours à venir, alors que le climat est la moyenne des conditions météo sur plusieurs décennies."},
+ {name:"Énergie solaire : équateur ou pôles ?",
+  prompt:"Explique pourquoi l'énergie solaire reçue par m² est plus élevée à l'équateur qu'aux pôles.",
+  ctx:"Aide : forme de la Terre ? angle des rayons à l'équateur ? au cercle polaire ? surface éclairée ? énergie par m² ?",
+  crit:[
+   ["Je parle de la forme de la Terre (sphérique, ronde)",t=>/(spheri|ronde|boule)/.test(t)],
+   ["Équateur : les rayons sont perpendiculaires",t=>t.includes('equateur')&&/(perpendiculaire|vertical|droit)/.test(t)],
+   ["Pôles / cercle polaire : les rayons sont inclinés",t=>/(pole|polaire)/.test(t)&&/(incline|oblique|rasant)/.test(t)],
+   ["Je compare les surfaces (petite / grande) ou l'énergie (concentrée / étalée)",t=>t.includes('surface')&&/(petite|grande|etal|repart|concentr)/.test(t)],
+   ["Je conclus : plus d'énergie par m² à l'équateur",t=>/(plus (d |de )?energie|plus eleve|plus forte|plus chaud|plus importante)/.test(t)]
+  ],
+  model:"La Terre est sphérique. À l'équateur, les rayons du Soleil arrivent perpendiculairement à la surface : l'énergie est concentrée sur une petite surface. Au niveau du cercle polaire, les rayons arrivent inclinés : la même énergie est répartie sur une plus grande surface. L'énergie solaire reçue par m² est donc plus élevée à l'équateur qu'aux pôles."},
+ {name:"Le climat de Paris",
+  prompt:"Rédige une phrase bilan sur les hivers et les étés de Paris (5 °C au minimum, 21 °C au maximum), puis indique son climat.",
+  ctx:"Climat polaire : froid toute l'année (10 °C au maximum), hivers glacials. Climat tempéré : doux en hiver, chaud en été. Climat chaud : très chaud l'été, chaud l'hiver.",
+  crit:[
+   ["Je parle des hivers (doux, 5 °C)",t=>t.includes('hiver')&&(t.includes('doux')||/\b5\b/.test(t))],
+   ["Je parle des étés (chauds, 21 °C)",t=>/(ete|etes)/.test(t)&&(t.includes('chaud')||/\b21\b/.test(t))],
+   ["J'utilise les bons adjectifs : doux (hiver) et chauds (été)",t=>t.includes('doux')&&t.includes('chaud')],
+   ["J'indique le climat : tempéré",t=>t.includes('tempere')]
+  ],
+  model:"À Paris, les hivers sont doux (5 °C au minimum) et les étés sont chauds (21 °C au maximum) : le climat est tempéré."}
+];
+let RCUR=0;
+function redaction(){
+  app.innerHTML=`<section class="card lesson pop"><h2>✍️ Atelier rédaction</h2>
+  <p>Écris ta réponse comme à l'évaluation. L'appli vérifie que tu as les <b>bons éléments</b>, puis te montre un modèle. Ensuite, recopie ta meilleure version sur ta feuille !</p>
+  <div class="map">${RED.map((r,i)=>`<button class="lv" style="--belt:#8e5bd6" onclick="openRed(${i})"><span class="em">✍️</span><span><b>${r.name}</b></span></button>`).join('')}</div>
+  <div class="btns"><button class="btn ghost" onclick="home()">⬅ Carte</button></div></section>`;
+  window.scrollTo(0,0);
+}
+function openRed(i){
+  RCUR=i;const r=RED[i];
+  app.innerHTML=`<section class="card lesson pop"><h2>✍️ ${r.name}</h2>
+  <p><b>${r.prompt}</b></p><div class="note">${r.ctx}</div>
+  <textarea id="rtext" placeholder="Écris ta réponse ici…" aria-label="Ta réponse"></textarea>
+  <div id="rres"></div>
+  <div class="btns"><button class="btn ghost" onclick="redaction()">⬅ Exercices</button><button class="btn" onclick="checkRed()">✅ Vérifier ma réponse</button></div></section>`;
+  window.scrollTo(0,0);
+}
+function checkRed(){
+  const r=RED[RCUR],raw=$('#rtext').value,t=norm(raw);
+  if(t.length<12){$('#rres').innerHTML=`<div class="note">Écris d'abord ta réponse, même courte !</div>`;return}
+  const res=r.crit.map(c=>[c[1](t),c[0]]);
+  const ok=res.filter(x=>x[0]).length;
+  $('#rres').innerHTML=`<h3>${ok===res.length?'🟢 Réponse complète !':ok>=Math.ceil(res.length/2)?'🟡 Presque, il manque des éléments':'🔴 Il manque beaucoup d\'éléments'} (${ok}/${res.length})</h3>
+  <ul class="crit">${res.map(x=>`<li class="${x[0]?'y':'n'}">${x[0]?'✅':'❌'} ${x[1]}</li>`).join('')}</ul>
+  <details class="peek" ${ok===res.length?'':'open'}><summary>👁️ Voir la réponse modèle</summary><div class="model">${r.model}</div></details>
+  <div class="note">L'appli repère les mots importants, mais elle ne remplace pas ton professeur. Compare toujours avec la correction.</div>`;
+  if(ok===res.length){sfxWin();say("Réponse complète ! Bravo, jeune ninja des sciences !")}
+  else{sfxBad();say("Il manque quelques éléments. Regarde la liste, puis améliore ta réponse !")}
+  $('#rres').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+const app=$('#app');
+home();
+</script>
+</body>
+</html>
